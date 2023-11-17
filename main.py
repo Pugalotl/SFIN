@@ -18,6 +18,15 @@ jump = -1
 notes = []
 note_num = 0
 
+binary_rep = {
+    ">": 0,
+    "?": 1,
+    "v": 2,
+    "|": 3
+}
+
+def set_2_bit(arr,pos,val):
+    return arr | (val << ((3-pos)*2))
 
 while (counts < len(command_line_args)):
     if (command_line_args[counts] == "-h"):
@@ -29,6 +38,10 @@ while (counts < len(command_line_args)):
             -s  Reads the program from a string
             -n  Reads notes from a file based on lines (used for debugging)
             -b  Reads from a binary file (to be added)
+            -c  Compiles the current program into a binary file
+            
+            For example:
+            python main.py -s ">>>>" -c awesome.bin
             """)
         sys.exit()
     if (command_line_args[counts] == "-s"):
@@ -45,6 +58,31 @@ while (counts < len(command_line_args)):
             counts += 1
             with open(command_line_args[counts]) as f:
                 notes = f.readlines()
+    if (command_line_args[counts] == "-b"):
+        if (counts + 1 < len(command_line_args)):
+            counts += 1
+            with open(command_line_args[counts],"rb") as f:
+                read_array = f.read()
+                for b in read_array:
+                    for i in range(4):
+                        program += list(binary_rep.keys())[list(binary_rep.values()).index((b>>((3-i)*2))&3)]
+    if (command_line_args[counts] == "-c"):
+        if (counts + 1 < len(command_line_args)):
+            counts += 1
+            write_array = bytearray(((len(program)-1)//4)+1)
+            counter = 0
+            byte = 0
+            for p in program:
+                if p in binary_rep:
+                    write_array[byte] = set_2_bit(write_array[byte],counter,binary_rep[p])
+                    counter += 1
+                    if (counter == 4):
+                        byte += 1
+                        counter = 0
+            with open(command_line_args[counts],"wb") as f:
+                f.write(write_array)
+            sys.exit()
+                
     counts += 1
 
 
@@ -63,6 +101,9 @@ def set_bit(pos, val):
     global array
     array[pos//8] = array[pos//8] & ~(1 << (7-(pos%8)))
     array[pos//8] = array[pos//8] | (val << (7-(pos%8)))
+    
+   
+
     
 jumps = []
   
